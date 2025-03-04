@@ -64,15 +64,19 @@ function App() {
     ]);
   }
 
-  // Create a temporary object to store values during collection
-  let tempEventDetails = {
-    name: "",
-    phone: "",
-    date: "",
-    time: "",
-    dateTime: null
-  };
+  async function dataExtractionCase1(message) {
+    let nameFormatted = await chatGPTService.formatInput(message, "name");
+   
+   if(nameFormatted && nameFormatted !== "INVALID") {
+      eventDetails.name = nameFormatted;
+      sendChatGPTMessage("Muchas gracias, a continuación proporcione tu número de teléfono.");
+      setCurrentStep(2);
+    } else {
+      sendChatGPTMessage("No he podido entender el nombre. Por favor, proporcione un nombre válido.");
+    }
+ 
 
+  }
   async function dataExtractionCase2(message) {
     let phoneFormatted = await chatGPTService.formatInput(message, PHONE_PROMPT);
 
@@ -162,9 +166,7 @@ function App() {
             setCurrentStep(1);
             break;
           case 1:
-            eventDetails.name = await chatGPTService.formatInput(message, "name");
-            sendChatGPTMessage("Muchas gracias, a continuación proporcione tu número de teléfono.");
-            setCurrentStep(2);
+            dataExtractionCase1(message); 
             break;
           case 2:
             dataExtractionCase2(message);

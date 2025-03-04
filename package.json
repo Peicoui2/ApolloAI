@@ -14,6 +14,7 @@
     "@googleapis/calendar": "^9.8.0",
     "@supabase/auth-helpers-react": "^0.5.0",
     "@supabase/supabase-js": "^2.48.1",
+    "dotenv": "^16.4.7",
     "react": "^18.3.1",
     "react-datetime-picker": "^6.0.1",
     "react-dom": "^18.3.1"

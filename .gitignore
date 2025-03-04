@@ -23,3 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 src/config/credentials.js
+.env.example
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

@@ -51,3 +51,22 @@ export const PROMPT_HABLAR = "Eres un asistente de ventas experto en guiar a los
   "Destaca el valor del servicio con ejemplos y testimonios si es necesario." +
   "Si el usuario muestra interés, dirígelo de manera natural hacia agendar una cita, asegurándote de que el proceso sea fácil y atractivo para él.";
 
+export const PHONE_PROMPT = `Eres un asistente especializado en formatear números de teléfono españoles al formato +34 XXX XXX XXX.
+
+Reglas:
+1. El número debe tener 9 dígitos (sin contar el prefijo +34)
+2. Elimina cualquier espacio, guión o carácter especial
+3. Añade el prefijo +34 si no está presente
+4. Formatea el número en grupos de 3 dígitos
+5. Si el número no es válido o no tiene 9 dígitos, responde con "INVALID"
+
+Ejemplos:
+- "mi número es 666777888" -> +34 666 777 888
+- "llámame al 666-777-888" -> +34 666 777 888
+- "666 77 78 88" -> +34 666 777 888
+- "0034666777888" -> +34 666 777 888
+- "34666777888" -> +34 666 777 888
+- "6667778" -> "INVALID"
+
+Responde SOLO con el número formateado o "INVALID".`;
+

@@ -11,7 +11,8 @@ const {
   useSupabaseClient,
   useSessionContext,
   ChatGPTService,
-  CalendarService,
+  CalendarServiceActiveUser,
+  CalendarServiceAccount,
   DATE_PROMPT,
   PROMPT_HABLAR,
   TIME_PROMPT,
@@ -20,10 +21,14 @@ const {
 } = imports;
 
 function App() {
+
+
   const session = useSession();
   const supabase = useSupabaseClient();
   const chatGPTService = new ChatGPTService(config.OPENAI_API_KEY);
-  const calendarService = new CalendarService();
+  const calendarServiceAccount = new CalendarServiceAccount();
+  const calendarServiceActiveUser = new CalendarServiceActiveUser();
+
 
 
   const [typing, setTyping] = useState(false);
@@ -34,6 +39,7 @@ function App() {
     phone: "",
     date: "",
     time: "",
+    reason:"",
     dateTime: null
   });
   const [messages, setMessages] = useState([
@@ -104,12 +110,9 @@ function App() {
 
 
   async function dataExtractionCase4(message) {
-    let timeFormatted = await chatGPTService.formatInput(message, TIME_PROMPT);
     
-    console.log(timeFormatted, '->  time');
-    console.log(eventDetails.date, '->  date');
-
-    let extractedDateTime = calendarService.parseDateTime(eventDetails.date, timeFormatted);
+    let timeFormatted = await chatGPTService.formatInput(message, TIME_PROMPT);
+    let extractedDateTime = calendarServiceActiveUser.parseDateTime(eventDetails.date, timeFormatted);
 
     if (extractedDateTime && extractedDateTime !== "INVALID") {
       eventDetails.time = timeFormatted;
@@ -118,17 +121,26 @@ function App() {
       try {
         // Set all collected details at once
         setEventDetails(eventDetails);
-        await calendarService.createCalendarEvent(session, eventDetails);
+
+        
+        //add to service account
+        await calendarServiceAccount.createEvent(eventDetails);
+        //add to personal user account
+        await calendarServiceActiveUser.createCalendarEvent(session, eventDetails);
+
         sendChatGPTMessage("Gracias, tu cita ha sido programada.");
+
+        setCurrentStep(0);
+        setConfirm(false);
+        setIsScheduling(false);
       } catch (error) {
-        console.error('Calendar error:', error);
-        sendChatGPTMessage("Lo siento, hubo un error al programar la cita. Por favor, inténtelo de nuevo.");
+        if (error.message.includes('Ya existe una cita')) {
+          sendChatGPTMessage("Lo siento, ya hay una cita programada para esa fecha y hora. Por favor, elige otro horario.");
+        } else {
+          sendChatGPTMessage("Lo siento, hubo un error al programar la cita. Por favor, inténtelo de nuevo.");
+        }
       }
 
-      setCurrentStep(0);
-      setConfirm(false);
-      setIsScheduling(false);
-      
      
     } else {
       sendChatGPTMessage("Error en el formato de fecha y hora. Por favor, inténtelo de nuevo.");
@@ -140,6 +152,12 @@ function App() {
 
 
   async function handleSend(message) {
+// Example usage in App.jsx or wherever you need it
+
+// Create an event
+
+
+
     const newMessage = { message, sender: "user", direction: "outgoing" };
 
     setMessages((prevMessages) => [...prevMessages, newMessage]);

@@ -10,7 +10,8 @@ import {
 } from "@chatscope/chat-ui-kit-react";
 import { useSession, useSupabaseClient, useSessionContext } from "@supabase/auth-helpers-react";
 import { ChatGPTService } from "./ChatGPTService";
-import { CalendarService } from "./CalendarService";
+import { CalendarServiceActiveUser } from "./CalendarServiceActiveUser";
+import { CalendarServiceAccount} from "./CalendarService";
 import { DATE_PROMPT, PROMPT_HABLAR, TIME_PROMPT, PHONE_PROMPT } from '../constants/prompts';
 import { config } from '../config/env.config';
 
@@ -26,7 +27,8 @@ export const imports = {
   useSupabaseClient,
   useSessionContext,
   ChatGPTService,
-  CalendarService,
+  CalendarServiceActiveUser,
+  CalendarServiceAccount,
   DATE_PROMPT,
   PROMPT_HABLAR,
   TIME_PROMPT,

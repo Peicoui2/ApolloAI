@@ -11,10 +11,13 @@
   },
   "dependencies": {
     "@chatscope/chat-ui-kit-react": "^2.0.3",
+    "@google-cloud/local-auth": "^3.0.1",
     "@googleapis/calendar": "^9.8.0",
     "@supabase/auth-helpers-react": "^0.5.0",
     "@supabase/supabase-js": "^2.48.1",
     "dotenv": "^16.4.7",
+    "google-auth-library": "^9.15.1",
+    "googleapis": "^146.0.0",
     "react": "^18.3.1",
     "react-datetime-picker": "^6.0.1",
     "react-dom": "^18.3.1"

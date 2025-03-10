@@ -1,158 +1,212 @@
-export class CalendarService {
-    constructor() {
-        this.API_BASE_URL = 'https://www.googleapis.com/calendar/v3';
+import { config } from '../config/env.config';
+import { serviceAccountCredentials } from '../config/credentials.js';
+
+export class CalendarServiceAccount {
+  constructor() {
+    this.API_BASE_URL = 'https://www.googleapis.com/calendar/v3';
+    this.calendarId = serviceAccountCredentials.calendar_id || '931eb4029b4b37053c2e5251ce2de8b65c102870b7022305d36ebebd2d183462@group.calendar.google.com';
+    this.accessToken = null;
+  }
+
+  async getAccessToken() {
+    if (this.accessToken) return this.accessToken;
+
+    const jwt = await this.createJWT();
+    const response = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion: jwt
+      })
+    });
+
+    const data = await response.json();
+    this.accessToken = data.access_token;
+    return this.accessToken;
+  }
+
+  async createJWT() {
+    const header = {
+      alg: 'RS256',
+      typ: 'JWT'
+    };
+
+    const now = Math.floor(Date.now() / 1000);
+    const claim = {
+      iss: serviceAccountCredentials.client_email,
+      scope: 'https://www.googleapis.com/auth/calendar',
+      aud: 'https://oauth2.googleapis.com/token',
+      exp: now + 3600,
+      iat: now
+    };
+
+    const encodedHeader = btoa(JSON.stringify(header));
+    const encodedClaim = btoa(JSON.stringify(claim));
+    const base = `${encodedHeader}.${encodedClaim}`;
+
+    const privateKey = serviceAccountCredentials.private_key.replace(/\\n/g, '\n');
+    const signature = await this.signJWT(base, privateKey);
+
+    return `${base}.${signature}`;
+  }
+
+  async signJWT(base, privateKey) {
+    const binaryKey = this.pemToBinary(privateKey);
+    const importedKey = await crypto.subtle.importKey(
+      'pkcs8',
+      binaryKey,
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        hash: 'SHA-256',
+      },
+      false,
+      ['sign']
+    );
+
+    const encoded = new TextEncoder().encode(base);
+    const signature = await crypto.subtle.sign(
+      'RSASSA-PKCS1-v1_5',
+      importedKey,
+      encoded
+    );
+
+    return btoa(String.fromCharCode(...new Uint8Array(signature)));
+  }
+
+  pemToBinary(pem) {
+    const base64 = pem
+      .replace('-----BEGIN PRIVATE KEY-----', '')
+      .replace('-----END PRIVATE KEY-----', '')
+      .replace(/\s/g, '');
+    const binary = atob(base64);
+    const buffer = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      buffer[i] = binary.charCodeAt(i);
     }
+    return buffer;
+  }
 
-    parseDateTime(dateString, timeString) {
-        if (!dateString || !timeString) {
-            console.error('Missing date or time string');
-            return null;
+  async createEvent(eventDetails) {
+    try {
+      // Check for conflicts before creating the event
+      const hasConflict = await this.hasDateConflict(eventDetails.dateTime);
+      
+      if (hasConflict) {
+        throw new Error('Ya existe una cita programada para esta fecha y hora.');
+      }
+
+      const token = await this.getAccessToken();
+
+      const event = {
+        summary: `Cita de ${eventDetails.name}`,
+        description: `Teléfono: ${eventDetails.phone}\nDetalles adicionales: ${eventDetails.reason || 'No especificados'}`,
+        start: {
+          dateTime: eventDetails.dateTime.toISOString(),
+          timeZone: 'Europe/Madrid'
+        },
+        end: {
+          dateTime: new Date(eventDetails.dateTime.getTime() + config.MEET_DURATION * 60 * 1000).toISOString(),
+          timeZone: 'Europe/Madrid'
+        },
+        reminders: {
+          useDefault: false,
+          overrides: [
+            { method: 'email', minutes: 24 * 60 },
+            { method: 'popup', minutes: 30 }
+          ]
         }
+      };
 
-        try {
-            console.log("|" + dateString + "|", "|" + timeString + "|");
-            const [day, month, year] = dateString.split("/").map(Number);
-            const [hours, minutes] = timeString.split(":").map(Number);
+      const response = await fetch(`${this.API_BASE_URL}/calendars/${this.calendarId}/events`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(event)
+      });
 
-            if (day == null || month == null || year == null || hours == null || minutes == null) {
-                throw new Error('Invalid date or time format');
-            }
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-            const date = new Date(year, month - 1, day, hours, minutes);
-
-            if (isNaN(date.getTime())) {
-                throw new Error('Invalid date');
-            }
-
-            return date;
-        } catch (error) {
-            console.error("Error parsing date and time:", error);
-            return null;
-        }
+      const data = await response.json();
+      console.log('Event created successfully:', data);
+      return data;
+    } catch (error) {
+      console.error('Error creating calendar event:', error);
+      throw error;
     }
+  }
 
-    async createCalendarEvent(session, eventDetails) {
-        console.log(session.provider_token, "-> session.provider_token");
-
-        if (!session.provider_token) {
-            throw new Error('No authentication token available');
+  async getFutureEvents() {
+    try {
+      const token = await this.getAccessToken();
+      const response = await fetch(`${this.API_BASE_URL}/calendars/${this.calendarId}/events`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        params: {
+          timeMin: new Date().toISOString(),
+          singleEvents: true,
+          orderBy: 'startTime'
         }
+      });
 
-        try {
-            console.log("Creating calendar event with details:", eventDetails);
-            const event = {
-                'summary': `Cita de ${eventDetails.name}`,
-                'description': `Teléfono: ${eventDetails.phone}\nDetalles adicionales: ${eventDetails.reason || 'No especificados'}`,
-                'start': {
-                    'dateTime': eventDetails.dateTime.toISOString(),
-                    'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
-                },
-                'end': {
-                    'dateTime': new Date(eventDetails.dateTime.getTime() + 60 * 60 * 1000).toISOString(), // Add 1 hour
-                    'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
-                },
-                'reminders': {
-                    'useDefault': false,
-                    'overrides': [
-                        {'method': 'email', 'minutes': 24 * 60}, // 24 hours email reminder
-                        {'method': 'popup', 'minutes': 30} // 30 minutes popup reminder
-                    ]
-                }
-            };
-            console.log(event, "-> event");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-            const response = await fetch(`${this.API_BASE_URL}/calendars/primary/events`, {
-                method: "POST",
-                headers: {
-                    'Authorization': 'Bearer '+session.provider_token,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(event)
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error?.message || 'Failed to create event');
-            }
-
-            const data = await response.json();
-            console.log("Event created successfully:", data);
-            return data;
-        } catch (error) {
-            console.error("Error creating calendar event:", error);
-            throw error;
-        }
+      const data = await response.json();
+      return data.items || [];
+    } catch (error) {
+      console.error('Error fetching future events:', error);
+      throw error;
     }
+  }
 
-    /**
-     * Obtiene los eventos del calendario
-     */
-    async getEvents() {
-        try {
-            const response = await this.calendar.events.list({
-                calendarId: 'primary',
-                timeMin: (new Date()).toISOString(),
-                showDeleted: false,
-                singleEvents: true,
-                maxResults: 10,
-                orderBy: 'startTime'
-            });
+  async hasDateConflict(proposedDateTime) {
+    try {
+      const futureEvents = await this.getFutureEvents();
+      
+      // Convert proposed time to start and end times
+      const proposedStart = new Date(proposedDateTime);
+      const proposedEnd = new Date(proposedDateTime.getTime() + config.MEET_DURATION * 60 * 1000);
 
-            console.log('Events retrieved:', response.data.items);
-            return response.data.items;
-        } catch (error) {
-            console.error('Error retrieving events:', error);
-            throw error;
-        }
+      return futureEvents.some(event => {
+        const eventStart = new Date(event.start.dateTime);
+        const eventEnd = new Date(event.end.dateTime);
+
+        // Check for overlap
+        return (
+          (proposedStart >= eventStart && proposedStart < eventEnd) ||
+          (proposedEnd > eventStart && proposedEnd <= eventEnd) ||
+          (proposedStart <= eventStart && proposedEnd >= eventEnd)
+        );
+      });
+    } catch (error) {
+      console.error('Error checking date conflicts:', error);
+      throw error;
     }
+  }
 
-    /**
-     * Actualiza un evento existente
-     */
-    async updateEvent(eventId, eventDetails) {
-        try {
-            const event = {
-                summary: `Cita de ${eventDetails.name}`,
-                description: eventDetails.reason || 'Cita programada',
-                start: {
-                    dateTime: eventDetails.dateTime.toISOString(),
-                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                },
-                end: {
-                    dateTime: new Date(eventDetails.dateTime.getTime() + 60 * 60 * 1000).toISOString(),
-                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                }
-            };
-
-            const response = await this.calendar.events.update({
-                calendarId: 'primary',
-                eventId: eventId,
-                resource: event,
-            });
-
-            console.log('Event updated:', response.data);
-            return response.data;
-        } catch (error) {
-            console.error('Error updating event:', error);
-            throw error;
-        }
+  parseDateTime(dateString, timeString) {
+    if (!dateString || !timeString) return null;
+    
+    try {
+      const [day, month, year] = dateString.split('/').map(Number);
+      const [hours, minutes] = timeString.split(':').map(Number);
+      
+      const date = new Date(year, month - 1, day, hours, minutes);
+      return isNaN(date.getTime()) ? null : date;
+    } catch (error) {
+      console.error('Error parsing date time:', error);
+      return null;
     }
-
-    /**
-     * Elimina un evento
-     */
-    async deleteEvent(eventId) {
-        try {
-            await this.calendar.events.delete({
-                calendarId: 'primary',
-                eventId: eventId,
-            });
-
-            console.log('Event deleted');
-            return true;
-        } catch (error) {
-            console.error('Error deleting event:', error);
-            throw error;
-        }
-    }
+  }
 }

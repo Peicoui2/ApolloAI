@@ -3,7 +3,7 @@
   line-height: 1.5;
   font-weight: 400;
   color-scheme: light;
-  background-color: #61dafb;
+  background-color: #5b5b5b;
 }
 
 a {
@@ -50,4 +50,67 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-/* Remove unused styles and media queries */
+/* ChatScope overrides */
+.cs-message__content {
+  background-color: transparent !important;
+}
+
+.cs-message-list {
+  background-color: #e2e0e0 !important;
+  padding: 1rem !important;
+}
+
+.cs-typing-indicator {
+  background-color: #2C2C2C !important;
+  color: #FFFFFF !important;
+}
+
+.cs-message {
+  background-color: transparent !important;
+}
+.cs-message--outgoing .cs-message__content {
+  background-color: #2C2C2C !important;
+  color: #FFFFFF !important;
+  border: 2px solid #aaa7a7 !important;
+
+}
+
+.cs-message--incoming .cs-message__content {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+  border: 2px solid #404040 !important;
+
+}
+
+.cs-avatar {
+  background-color: #FFFFFF !important;
+}
+/* Message input styling with fixed background */
+.cs-message-input {
+  background-color: #FFFFFF !important;
+  border: 1px solid #404040 !important;
+  border-radius: 8px !important;
+  overflow:'hidden';
+}
+
+.cs-message-input__content-editor {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+}
+
+.cs-message-input__content-editor-wrapper {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+}
+/* Fix button background */
+.cs-button--send {
+  color: #000000 !important;
+  background: transparent !important;
+}
+/* Ensure container has same background */
+.cs-message-input__content-editor-container {
+  background-color: #ececec !important;
+}
+.cs-button--send {
+  color: #000000 !important;
+}

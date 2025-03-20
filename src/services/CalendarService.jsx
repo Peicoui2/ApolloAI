@@ -1,10 +1,10 @@
-import { config } from '../config/env.config';
+import { config } from '../config/env.config.js';
 import { serviceAccountCredentials } from '../config/credentials.js';
 
 export class CalendarServiceAccount {
   constructor() {
     this.API_BASE_URL = 'https://www.googleapis.com/calendar/v3';
-    this.calendarId = serviceAccountCredentials.calendar_id || '931eb4029b4b37053c2e5251ce2de8b65c102870b7022305d36ebebd2d183462@group.calendar.google.com';
+    this.calendarId = config.GOOGLE_CALENDAR_ID;
     this.accessToken = null;
   }
 

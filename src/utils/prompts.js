@@ -1,5 +1,5 @@
-import { dateUtils } from "../utils/dateUtils";
-import { timeUtils } from "../utils/timeUtils";
+import { dateUtils } from "./dateUtils";
+import { timeUtils } from "./timeUtils";
 
 export const DATE_PROMPT = `Eres un asistente especializado en interpretar fechas en lenguaje natural y convertirlas al formato dd/mm/aaaa.
 
@@ -69,4 +69,37 @@ Ejemplos:
 - "6667778" -> "INVALID"
 
 Responde SOLO con el número formateado o "INVALID".`;
+
+export const NAME_PROMPT = `Given a user's input, extract and format their name according to these rules:
+
+Expected format: First Name Last Name
+Rules:
+- Capitalize first letter of each name
+- Remove extra spaces
+- Remove special characters
+- Keep only alphabetical characters and spaces
+- Return "INVALID" if:
+  * Input is empty
+  * Contains numbers
+  * Less than 2 characters
+  * More than 50 characters
+  * Contains only one word
+
+Examples:
+Input -> Expected Output
+"john doe" -> "John Doe"
+"MARÍA GARCÍA" -> "María García"
+"josé    pérez" -> "José Pérez"
+"a" -> "INVALID"
+"john123" -> "INVALID"
+"john" -> "INVALID"
+
+Instructions:
+1. Process the input text
+2. Apply formatting rules
+3. Return either the formatted name or "INVALID"
+
+Current input: {input}
+
+Return only the formatted name or "INVALID" without any additional text.`;
 

@@ -4,15 +4,14 @@ import {
   MainContainer,
   ChatContainer,
   MessageList,
-  Message,
   MessageInput,
   TypingIndicator,
 } from "@chatscope/chat-ui-kit-react";
 import { useSession, useSupabaseClient, useSessionContext } from "@supabase/auth-helpers-react";
-import { ChatGPTService } from "./ChatGPTService";
-import { CalendarServiceActiveUser } from "./CalendarServiceActiveUser";
-import { CalendarServiceAccount} from "./CalendarService";
-import { DATE_PROMPT, PROMPT_HABLAR, TIME_PROMPT, PHONE_PROMPT } from '../constants/prompts';
+import { ChatGPTService } from "../services/ChatGPTService";
+import { CalendarServiceActiveUser } from "../services/CalendarServiceActiveUser";
+import { CalendarServiceAccount} from "../services/CalendarService";
+import { DATE_PROMPT, PROMPT_HABLAR, TIME_PROMPT, PHONE_PROMPT } from './prompts';
 import { config } from '../config/env.config';
 
 export const imports = {
@@ -20,7 +19,6 @@ export const imports = {
   MainContainer,
   ChatContainer,
   MessageList,
-  Message,
   MessageInput,
   TypingIndicator,
   useSession,

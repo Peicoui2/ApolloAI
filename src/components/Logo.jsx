@@ -1,16 +1,20 @@
-import { styles } from './styles/styles';
-import PropTypes from 'prop-types';
 
-export const Logo = ({ src = "src/assets/AA-White.svg" }) => {
+export const Logo = () => {
     return (
         <img
-            src={src}
+            src="src/assets/AA-White.svg"
             alt="ChatGPT Avatar"
-            style={styles.logoAvatar}
+            style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                border: '1px solid #404040',
+                position: 'fixed',
+                bottom: '1rem',
+                right: '1rem',
+                backgroundColor: '#FFFFFF',
+                padding: '2px'
+            }}
         />
     );
-};
-
-Logo.propTypes = {
-    src: PropTypes.string
 };

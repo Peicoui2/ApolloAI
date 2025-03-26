@@ -11,7 +11,7 @@ export const AppStyle = {
     main: {
         position: 'relative',
         height: '85vh',  // Adjusted back
-        width: '100vh',
+        width: '80vh',
         marginBottom: '2rem'  // Reduced margin
     },
     footer: {

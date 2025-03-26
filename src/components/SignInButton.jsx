@@ -22,19 +22,35 @@ export const SignInButton = ({ supabase }) => {
     }
   };
 
-  return (
-    <>
-    <div style={styles.signInButton}>
-      <button
-        style={styles.buttonBase}
-        onClick={googleSignIn}
-      >
-        Sign In with Google
-      </button>
+return (
+    <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh'
+    }}>
+        <img 
+            src='src/assets/logo-apolloai-grey.png'
+            alt="Apollo AI Logo"
+            style={{ maxWidth: '250px', marginBottom: '30px' }}
+        />
+        <div style={styles.signInButton}>
+            <button
+                style={{
+                    ...styles.buttonBase,
+                    padding: '15px 30px',
+                    fontSize: '1.2rem'
+                }}
+                onClick={googleSignIn}
+                type="button"
+                aria-label="Sign in with Google"
+            >
+                Sign In with Google
+            </button>
+        </div>
     </div>
-
-    </>
-  );
+);
 };
 
 SignInButton.propTypes = {

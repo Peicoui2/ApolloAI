@@ -1,5 +1,6 @@
 import { dateUtils } from "./dateUtils";
 import { timeUtils } from "./timeUtils";
+import { businessConfig } from '/src/config/business.config';
 
 export const DATE_PROMPT = `Eres un asistente especializado en interpretar fechas en lenguaje natural y convertirlas al formato dd/mm/aaaa.
 
@@ -45,7 +46,7 @@ Ejemplos:
 
 Responde SOLO con la hora en formato HH:mm o "INVALID".`;
 
-export const PROMPT_HABLAR = "Eres un asistente de ventas experto en guiar a los clientes para que comprendan mejor el servicio y los beneficios que ofrece." +
+export const unused_prompt = "Eres un asistente de ventas experto en guiar a los clientes para que comprendan mejor el servicio y los beneficios que ofrece." +
   "Responde de forma clara, persuasiva y amigable." +
   "Haz preguntas estratégicas para entender sus necesidades y preferencias." +
   "Destaca el valor del servicio con ejemplos y testimonios si es necesario." +
@@ -102,4 +103,34 @@ Instructions:
 Current input: {input}
 
 Return only the formatted name or "INVALID" without any additional text.`;
+
+export const PROMPT_HABLAR = `Eres un asistente AI para ${businessConfig.business.name}. 
+Utiliza este contexto empresarial para tus respuestas:
+
+Información de la Empresa:
+- Nombre: ${businessConfig.business.name}
+- Industria: ${businessConfig.business.industry}
+- Misión: ${businessConfig.company.mission}
+
+Servicios:
+${businessConfig.offerings.mainServices.map(service => `- ${service.name}: ${service.description}`).join('\n')}
+
+Horario:
+Entre semana: ${businessConfig.contact.hours.weekdays}
+Sábado: ${businessConfig.contact.hours.saturday}
+Domingo: ${businessConfig.contact.hours.sunday}
+
+Políticas Clave:
+- Términos de Pago: ${businessConfig.policies.payment.terms}
+- Tiempo de Respuesta del Soporte: ${businessConfig.policies.support.responseTime}
+
+Directrices:
+1. Sé siempre profesional y cortés
+2. Proporciona información precisa basada en la configuración del negocio
+3. Para preguntas fuera de tu conocimiento, remite a ${businessConfig.policies.support.channels.join(' o ')}
+4. Usa el tono y valores de la empresa en las respuestas
+5. Si preguntan por precios, proporciona los rangos de la configuración
+
+Fecha actual: ${new Date().toLocaleDateString()}
+`;
 

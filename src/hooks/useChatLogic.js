@@ -1,13 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ChatGPTService } from '../services/ChatGPTService';
+import { config } from '../config/env.config';
 import { CalendarServiceAccount } from '../services/CalendarService';
 import { CalendarServiceActiveUser } from '../services/CalendarServiceActiveUser';
-import { config } from '../config/env.config';
 import { PROMPT_HABLAR, DATE_PROMPT, TIME_PROMPT, PHONE_PROMPT, NAME_PROMPT } from '../utils/prompts';
 
 export function useChatLogic(session) {
+    const chatGPTServiceRef = useRef(null);
+
+    // Initialize ChatGPTService only once
+    useEffect(() => {
+        if (!chatGPTServiceRef.current) {
+            chatGPTServiceRef.current = new ChatGPTService(config.OPENAI_API_KEY);
+        }
+    }, []);
+
+    // Initialize RAG when session is available
+    useEffect(() => {
+        if (session && chatGPTServiceRef.current) {
+            chatGPTServiceRef.current.initializeRAG().catch(console.error);
+        }
+    }, [session]);
+
     // Initialize services internally
-    const chatGPTService = new ChatGPTService(config.OPENAI_API_KEY);
     const calendarServiceAccount = new CalendarServiceAccount();
     const calendarServiceActiveUser = new CalendarServiceActiveUser();
 
@@ -41,7 +56,7 @@ export function useChatLogic(session) {
 
     // Data extraction cases
     async function dataExtractionCase1(message) {
-        let nameFormatted = await chatGPTService.formatInput(message, NAME_PROMPT);
+        let nameFormatted = await chatGPTServiceRef.current.formatInput(message, NAME_PROMPT);
         console.log(nameFormatted,"-> nameFormatted");
         if(nameFormatted && nameFormatted !== "INVALID") {
             eventDetails.name = nameFormatted;
@@ -53,7 +68,7 @@ export function useChatLogic(session) {
     }
 
     async function dataExtractionCase2(message) {
-        let phoneFormatted = await chatGPTService.formatInput(message, PHONE_PROMPT);
+        let phoneFormatted = await chatGPTServiceRef.current.formatInput(message, PHONE_PROMPT);
         console.log(phoneFormatted,"-> phoneFormatted");
         if (phoneFormatted && phoneFormatted !== "INVALID") {
             eventDetails.phone = phoneFormatted;
@@ -65,7 +80,7 @@ export function useChatLogic(session) {
     }
 
     async function dataExtractionCase3(message) {
-        let dateResponse = await chatGPTService.formatInput(message, DATE_PROMPT);
+        let dateResponse = await chatGPTServiceRef.current.formatInput(message, DATE_PROMPT);
         console.log(dateResponse,"-> dateResponse");
         if (dateResponse && dateResponse !== "INVALID") {
             eventDetails.date = dateResponse;
@@ -77,7 +92,7 @@ export function useChatLogic(session) {
     }
 
     async function dataExtractionCase4(message) {
-        let timeFormatted = await chatGPTService.formatInput(message, TIME_PROMPT);
+        let timeFormatted = await chatGPTServiceRef.current.formatInput(message, TIME_PROMPT);
         let extractedDateTime = calendarServiceActiveUser.parseDateTime(eventDetails.date, timeFormatted);
         console.log(eventDetails.date,"-> localEventDetails.date");
         console.log(timeFormatted,"-> timeFormatted");
@@ -122,7 +137,7 @@ export function useChatLogic(session) {
 
         try {
             if (!confirm) {
-                const schedulingIntent = await chatGPTService.classifyMessage(newMessage);
+                const schedulingIntent = await chatGPTServiceRef.current.classifyMessage(newMessage);
                 const isSchedulingIntent = schedulingIntent === "PROGRAMAR";
 
                 if (isSchedulingIntent) {
@@ -131,7 +146,7 @@ export function useChatLogic(session) {
                     sendChatGPTMessage("Para proceder voy a pedirle unos datos. Por favor, proporcione su nombre completo.");
                     setCurrentStep(1);
                 } else {
-                    const responseMessage = await chatGPTService.ask([...messages, newMessage], PROMPT_HABLAR);
+                    const responseMessage = await chatGPTServiceRef.current.ask([...messages, newMessage], PROMPT_HABLAR);
                     sendChatGPTMessage(responseMessage);
                 }
             } else if (isScheduling) {
@@ -152,7 +167,7 @@ export function useChatLogic(session) {
                         break;
                 }
             } else {
-                const responseMessage = await chatGPTService.ask([...messages, newMessage], PROMPT_HABLAR);
+                const responseMessage = await chatGPTServiceRef.current.ask([...messages, newMessage], PROMPT_HABLAR);
                 sendChatGPTMessage(responseMessage);
             }
         } catch (error) {

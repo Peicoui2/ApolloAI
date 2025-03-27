@@ -6,7 +6,7 @@ import { SessionContextProvider } from '@supabase/auth-helpers-react'
 import App from './App'
 import { config } from './config/env.config.js'
 
-const supabase = createClient(
+export const supabase = createClient(
 config.PUBLIC_SUPABASE_URL,  config.PUBLIC_SUPABASE_ANON_KEY,
   {
     auth: {

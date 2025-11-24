@@ -91,7 +91,7 @@ export class ChatGPTService {
             const textSplitter = new RecursiveCharacterTextSplitter({
                 chunkSize: 500,
                 chunkOverlap: 50,
-                separators: ["\n\n", "\n", ". ", ", ", " ", ""], // Ajustado para español
+                separators: ["\n\n", "\n", ". ", ", ", " ", ""], 
                 keepSeparator: true
             });
 

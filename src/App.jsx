@@ -6,6 +6,7 @@ import { useChatLogic } from './hooks/useChatLogic';
 import { SignOutButton } from './components/SignOutButton';
 import { SignInButton } from './components/SignInButton';
 import { Logo } from './components/Logo';
+import { AppointmentsList } from './components/AppointmentsList';
 
 const {
   MainContainer,
@@ -71,6 +72,7 @@ function App() {
                 />
               </ChatContainer>
             </MainContainer>
+            <AppointmentsList userId={session.user.id} />
             <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}>
               <SignOutButton supabase={supabase} />
             </div>

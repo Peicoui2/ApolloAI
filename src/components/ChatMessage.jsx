@@ -24,6 +24,7 @@ export const ChatMessage = ({ msg }) => {
               borderRadius: '50%',
               backgroundColor: '#FFFFFF',
               border: '1px solid #404040',
+              marginRight: '2px'
             }}
           />
           </div>
@@ -50,8 +51,7 @@ export const ChatMessage = ({ msg }) => {
               borderRadius: '50%',
               backgroundColor: '#FFFFFF',
               border: '1px solid #404040',
-              flexShrink: 0,
-              marginLeft: '8px'
+              marginLeft: '2px'
             }}
           />
         )}

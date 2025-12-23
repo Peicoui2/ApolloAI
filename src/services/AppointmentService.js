@@ -39,4 +39,18 @@ export class AppointmentService {
             throw error;
         }
     }
+
+    async deleteAppointment(appointmentId) {
+        try {
+            const { data, error } = await supabase
+                .from('appointments')
+                .delete()
+                .eq('id', appointmentId);
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Error deleting appointment:', error);
+            throw error;
+        }
+    }
 }

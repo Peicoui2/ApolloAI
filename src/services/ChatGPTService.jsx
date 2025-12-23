@@ -187,7 +187,7 @@ export class ChatGPTService {
 
     async classifyMessage(message) {
         try {
-            const response = await this.ask([message], "Classify if this message indicates scheduling intent. Reply only with 'PROGRAMAR' or 'HABLAR'.");
+            const response = await this.ask([message], `Eres un clasificador estricto. Determina si el siguiente mensaje expresa intención de agendar, reservar, confirmar, reprogramar o cancelar una cita/servicio (p. ej. incluye fechas, horas, "reservar", "agendar", "programar", "cancelar", "reprogramar", "disponible", "¿a qué hora?", "¿qué día?", "mañana a las 3", etc.). Responde SOLO con UNA palabra exacta: PROGRAMAR (si hay intención de agendar) o HABLAR (si no hay intención de agendar). No añadas explicaciones, puntuación, comillas ni texto adicional. Si no estás seguro, responde HABLAR.`);
             return response.trim();
         } catch (error) {
             console.error('Error classifying message:', error);

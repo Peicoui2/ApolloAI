@@ -10,8 +10,9 @@ export const AppStyle = {
     },
     main: {
         position: 'relative',
-        height: '85vh',  // Adjusted back
-        width: '80vh',
+        height: '85vh',  
+        // Use a responsive max width so the chat doesn't stretch too wide on large screens
+        width: 'min(600px, 55%)',
         marginBottom: '2rem'  // Reduced margin
     },
     footer: {

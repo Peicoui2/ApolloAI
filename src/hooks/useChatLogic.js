@@ -4,6 +4,8 @@ import { config } from '../config/env.config';
 import { CalendarServiceAccount } from '../services/CalendarService';
 import { CalendarServiceActiveUser } from '../services/CalendarServiceActiveUser';
 import { PROMPT_HABLAR, DATE_PROMPT, TIME_PROMPT, PHONE_PROMPT, NAME_PROMPT } from '../utils/prompts';
+import { formatNameResponse, formatPhoneResponse, formatDateResponse, formatTimeResponse, validateDateAgainstBusiness, validateTimeAgainstBusiness } from '../utils/userInputFormatters';
+import { businessConfig } from '../config/business.config';
 import { AppointmentService } from '../services/AppointmentService';
 
 export function useChatLogic(session) {
@@ -44,6 +46,7 @@ export function useChatLogic(session) {
         reason: "",
         dateTime: null
     });
+    const [appointmentsVersion, setAppointmentsVersion] = useState(0);
 
     // Local event details object for temporary storage
  
@@ -58,79 +61,46 @@ export function useChatLogic(session) {
 
         // Data extraction cases
     async function dataExtractionCase1(message) {
-        let nameFormatted = await chatGPTServiceRef.current.formatInput(message, NAME_PROMPT);
-        console.log(nameFormatted, "-> nameFormatted");
-
-        let normalized = (nameFormatted || "").trim();        // Normalizar
-        normalized = normalized.replace(/^"(.*)"$/, "$1").trim();        // Quitar comillas exteriores si las hay
-        // Tratar como inválido si:
-        // - está vacío
-        // - es "INVALID" en cualquier combinación de mayúsculas/minúsculas
-        if (!normalized || normalized.toUpperCase() === "INVALID") {
+        const raw = await chatGPTServiceRef.current.formatInput(message, NAME_PROMPT);
+        console.log(raw, '-> raw name response');
+        const res = formatNameResponse(raw);
+        if (!res.ok) {
             sendChatGPTMessage("No he podido entender el nombre. Por favor, proporcione un nombre válido (nombre y apellido).");
             return;
         }
-        //validación extra por si el modelo se equivoca:
-        const hasNumbers = /\d/.test(normalized);
-        const parts = normalized.split(/\s+/);
-        if (hasNumbers || parts.length < 2) {
-            sendChatGPTMessage("Por favor, indique nombre y apellido.");
-            return;
-        }
-
-        setEventDetails(prev => ({
-            ...prev,
-            name: normalized
-        }));
-
+        setEventDetails(prev => ({ ...prev, name: res.value }));
         sendChatGPTMessage("Muchas gracias, a continuación proporcione tu número de teléfono.");
         setCurrentStep(2);
     }
 
     async function dataExtractionCase2(message) {
-    let phoneFormatted = await chatGPTServiceRef.current.formatInput(message, PHONE_PROMPT);
-        console.log(phoneFormatted, "-> phoneFormatted");
-    let normalized = (phoneFormatted || "").trim();    // Normalizar respuesta
-    normalized = normalized.replace(/^"(.*)"$/, "$1").trim();    // Quitar comillas exteriores si las hubiera
-    // Tratar como inválido si está vacío o es "INVALID" (en cualquier forma)
-    if (!normalized || normalized.toUpperCase() === "INVALID") {
-        sendChatGPTMessage(
-            "No he podido entender el número. Por favor, proporcione un número válido español (9 dígitos)."
-        );
+    const raw = await chatGPTServiceRef.current.formatInput(message, PHONE_PROMPT);
+        console.log(raw, '-> raw phone response');
+    const res = formatPhoneResponse(raw);
+    if (!res.ok) {
+        sendChatGPTMessage("No he podido entender el número. Por favor, proporcione un número válido español (9 dígitos).");
         return;
     }
-    // Validación extra por si el modelo se equivoca de formato
-    const phoneRegex = /^\+34 \d{3} \d{3} \d{3}$/;
-    if (!phoneRegex.test(normalized)) {
-        sendChatGPTMessage("El número no parece tener el formato correcto (+34 XXX XXX XXX). Inténtelo de nuevo, por favor.");
-        return;
-    }
-    // Guardar usando setEventDetails (no mutar directamente)
-    setEventDetails(prev => ({...prev,phone: normalized}));
-
+    setEventDetails(prev => ({ ...prev, phone: res.value }));
     sendChatGPTMessage("Gracias, ahora necesito la fecha cuando quiera la cita");
     setCurrentStep(3);
 }
 
     async function dataExtractionCase3(message) {
-    let dateResponse = await chatGPTServiceRef.current.formatInput(message, DATE_PROMPT);
-        console.log(dateResponse, "-> dateResponse");
-    let normalized = (dateResponse || "").trim();    // Normalizar respuesta
-    normalized = normalized.replace(/^"(.*)"$/, "$1").trim();    
-    // Tratar como inválido si está vacío o es INVALID en cualquier forma
-    if (!normalized || normalized.toUpperCase() === "INVALID") {
+    const raw = await chatGPTServiceRef.current.formatInput(message, DATE_PROMPT);
+        console.log(raw, '-> raw date response');
+    const res = formatDateResponse(raw);
+    if (!res.ok) {
         sendChatGPTMessage("No he podido entender la fecha. Por favor, indique una fecha en formato dd/mm/aaaa o dígala en palabras (ej: 'mañana', 'el próximo lunes').");
         return;
     }
-    // Validación básica de formato dd/mm/aaaa
-    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
-    if (!dateRegex.test(normalized)) {
-        sendChatGPTMessage("La fecha no tiene el formato correcto. Use dd/mm/aaaa (por ejemplo 25/03/2025) o dígala en palabras.");
+    // validate against business schedule (weekend / closed day)
+    const dateValidation = validateDateAgainstBusiness(res.value, businessConfig);
+    if (!dateValidation.ok) {
+        sendChatGPTMessage(dateValidation.message || 'La fecha seleccionada no está disponible. Por favor elija otro día.');
         return;
     }
-
-    setEventDetails(prev => ({...prev,date: normalized}));
-
+    setEventDetails(prev => ({ ...prev, date: res.value }));
     sendChatGPTMessage("¿A qué hora querría la cita?");
     setCurrentStep(4);
 }
@@ -139,6 +109,8 @@ export function useChatLogic(session) {
         setEventDetails(finalDetails);
         // Guardar en Supabase
         await appointmentService.createAppointment(finalDetails, session.user.id);
+        // bump appointmentsVersion so parent can refresh list
+        setAppointmentsVersion(v => v + 1);
         // Evento en calendario de cuenta de servicio
         await calendarServiceAccount.createEvent(finalDetails);
         // Evento en calendario del usuario
@@ -159,31 +131,27 @@ export function useChatLogic(session) {
     }
     }
     async function dataExtractionCase4(message) {
-    let timeFormattedRaw = await chatGPTServiceRef.current.formatInput(message, TIME_PROMPT);
-    let timeFormatted = (timeFormattedRaw || "").trim();    // Normalizar
-    timeFormatted = timeFormatted.replace(/^"(.*)"$/, "$1").trim();
-        console.log(timeFormatted, "-> timeFormatted (normalizado)");
-    // Comprobar "INVALID" o vacío
-    if (!timeFormatted || timeFormatted.toUpperCase() === "INVALID") {
+    const raw = await chatGPTServiceRef.current.formatInput(message, TIME_PROMPT);
+    console.log(raw, '-> raw time response');
+    const res = formatTimeResponse(raw);
+    if (!res.ok) {
         sendChatGPTMessage("No he podido entender la hora. Por favor, indique una hora en formato HH:mm (por ejemplo 18:00) o dígala en palabras (por ejemplo 'a las seis de la tarde').");
         return;
     }
-
-    // Validación básica de HH:mm
-    const timeRegex = /^\d{2}:\d{2}$/;
-    if (!timeRegex.test(timeFormatted)) {
-        sendChatGPTMessage("La hora no tiene el formato correcto. Use HH:mm en formato 24h (por ejemplo 09:30, 18:00).");
+    const timeFormatted = res.value;
+    // validate time against business hours for selected date
+    const timeValidation = validateTimeAgainstBusiness(eventDetails.date, timeFormatted, businessConfig);
+    if (!timeValidation.ok) {
+        sendChatGPTMessage(timeValidation.message || 'La hora seleccionada no está disponible. Por favor elija otra hora dentro del horario laboral.');
         return;
     }
     // Combinar fecha + hora
     const extractedDateTime = calendarServiceActiveUser.parseDateTime(eventDetails.date, timeFormatted);
-    console.log(eventDetails.date, "-> eventDetails.date");
-    console.log(extractedDateTime, "-> extractedDateTime");
+    console.log(eventDetails.date, '-> eventDetails.date');
+    console.log(extractedDateTime, '-> extractedDateTime');
 
-    if (!extractedDateTime || extractedDateTime === "INVALID") {
-        sendChatGPTMessage(
-            "Error al interpretar la fecha y la hora. Por favor, revise que la fecha y la hora sean correctas."
-        );
+    if (!extractedDateTime || extractedDateTime === 'INVALID') {
+        sendChatGPTMessage('Error al interpretar la fecha y la hora. Por favor, revise que la fecha y la hora sean correctas.');
         return;
     }
     // Construir objeto completo de cita
@@ -251,6 +219,7 @@ export function useChatLogic(session) {
         eventDetails,
         handleSend,
         isScheduling,
-        confirm
+        confirm,
+        appointmentsVersion
     };
 }

@@ -28,7 +28,7 @@ Reglas:
 3. Si mencionan "mediodía" o "12 del mediodía", usa 12:00
 4. Si mencionan "medianoche", usa 00:00
 5. Si mencionan períodos del día:
-   - "mañana": entre 06:00-12:00
+   - "mañana": entre 06:00-12:00D
    - "tarde": entre 12:00-20:00
    - "noche": entre 20:00-23:59
 6. Si la hora no es clara o válida, responde con "INVALID"
@@ -104,7 +104,7 @@ Current input: {input}
 
 Return only the formatted name or "INVALID" without any additional text.`;
 
-export const PROMPT_HABLAR = `Eres un asistente AI para ${businessConfig.business.name}. 
+export const SPEAK_PROMPT = `Eres un asistente AI para ${businessConfig.business.name}. 
 Utiliza este contexto empresarial para tus respuestas:
 
 Información de la Empresa:

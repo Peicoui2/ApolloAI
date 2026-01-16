@@ -3,7 +3,7 @@ import { ChatGPTService } from '../services/ChatGPTService';
 import { config } from '../config/env.config';
 import { CalendarServiceAccount } from '../services/CalendarService';
 import { CalendarServiceActiveUser } from '../services/CalendarServiceActiveUser';
-import { PROMPT_HABLAR, DATE_PROMPT, TIME_PROMPT, PHONE_PROMPT, NAME_PROMPT } from '../utils/prompts';
+import { SPEAK_PROMPT, DATE_PROMPT, TIME_PROMPT, PHONE_PROMPT, NAME_PROMPT } from '../utils/prompts';
 import { formatNameResponse, formatPhoneResponse, formatDateResponse, formatTimeResponse, validateDateAgainstBusiness, validateTimeAgainstBusiness } from '../utils/userInputFormatters';
 import { businessConfig } from '../config/business.config';
 import { AppointmentService } from '../services/AppointmentService';
@@ -78,7 +78,7 @@ export function useChatLogic(session) {
         console.log(raw, '-> raw phone response');
     const res = formatPhoneResponse(raw);
     if (!res.ok) {
-        sendChatGPTMessage("No he podido entender el número. Por favor, proporcione un número válido español (9 dígitos).");
+        sendChatGPTMessage("No he podido entender el número. Por favor, proporcione un número válido español (9 dígitos) sin espacios ni guiones.");
         return;
     }
     setEventDetails(prev => ({ ...prev, phone: res.value }));
@@ -180,7 +180,7 @@ export function useChatLogic(session) {
                     sendChatGPTMessage("Para proceder voy a pedirle unos datos. Por favor, proporcione su nombre completo.");
                     setCurrentStep(1);
                 } else {
-                    const responseMessage = await chatGPTServiceRef.current.ask([...messages, newMessage], PROMPT_HABLAR);
+                    const responseMessage = await chatGPTServiceRef.current.ask([...messages, newMessage], SPEAK_PROMPT);
                     sendChatGPTMessage(responseMessage);
                 }
             } else if (isScheduling) {
@@ -201,7 +201,7 @@ export function useChatLogic(session) {
                         break;
                 }
             } else {
-                const responseMessage = await chatGPTServiceRef.current.ask([...messages, newMessage], PROMPT_HABLAR);
+                const responseMessage = await chatGPTServiceRef.current.ask([...messages, newMessage], SPEAK_PROMPT);
                 sendChatGPTMessage(responseMessage);
             }
         } catch (error) {

@@ -1,4 +1,5 @@
 import { imports } from "./utils/importInjector";
+import React, { useRef, useEffect, useState } from 'react';
 import { LoadingScreen } from './components/LoadingScreen';
 import { ChatMessage } from './components/ChatMessage';
 import { styles, AppStyle } from './components/styles/styles';

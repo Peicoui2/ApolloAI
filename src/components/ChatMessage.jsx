@@ -1,3 +1,4 @@
+import React from 'react';
 import { Message, Avatar } from "@chatscope/chat-ui-kit-react";
 import PropTypes from 'prop-types';
 

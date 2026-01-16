@@ -11,7 +11,7 @@ import { useSession, useSupabaseClient, useSessionContext } from "@supabase/auth
 import { ChatGPTService } from "../services/ChatGPTService";
 import { CalendarServiceActiveUser } from "../services/CalendarServiceActiveUser";
 import { CalendarServiceAccount} from "../services/CalendarService";
-import { DATE_PROMPT, PROMPT_HABLAR, TIME_PROMPT, PHONE_PROMPT } from './prompts';
+import { DATE_PROMPT, SPEAK_PROMPT, TIME_PROMPT, PHONE_PROMPT } from './prompts';
 import { config } from '../config/env.config';
 
 export const imports = {
@@ -28,7 +28,7 @@ export const imports = {
   CalendarServiceActiveUser,
   CalendarServiceAccount,
   DATE_PROMPT,
-  PROMPT_HABLAR,
+  SPEAK_PROMPT,
   TIME_PROMPT,
   PHONE_PROMPT,
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { AppointmentService } from '../services/AppointmentService';
 import { AppStyle } from './styles/styles';
@@ -108,9 +108,4 @@ AppointmentsList.propTypes = {
     userId: PropTypes.string.isRequired,
     containerStyle: PropTypes.object,
     refreshKey: PropTypes.number
-};
-
-AppointmentsList.defaultProps = {
-    containerStyle: {},
-    refreshKey: 0
 };
